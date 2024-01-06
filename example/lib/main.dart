@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:compass/compass.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() => runApp(const App());
 
@@ -14,6 +15,12 @@ class App extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ElevatedButton(
+                onPressed: () async => Permission.location.request(),
+                child: const Text(
+                  'Request Permission for true heading in Android',
+                ),
+              ),
               StreamBuilder<double>(
                 stream: Compass.heading,
                 initialData: 0,
