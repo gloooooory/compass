@@ -13,8 +13,15 @@ import android.os.Bundle
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.StreamHandler
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
 
-class CompassPlugin: FlutterPlugin, StreamHandler {
+class CompassPlugin: FlutterPlugin, StreamHandler, ActivityAware {
     private var channel: EventChannel? = null
     private var context: Context? = null
     private var sensorManager: SensorManager? = null
@@ -28,14 +35,14 @@ class CompassPlugin: FlutterPlugin, StreamHandler {
     private val headingChangeThreshold = 0.1f
     private var lastTrueHeading = 0f
     private var lastAzimuth = 0f
-    private var filterCoefficient = 0.8f
+    private var filterCoefficient = 0.2f
+    private var activity: Activity? = null
 
     init {
         locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
                 currentLocation = location
             }
-            override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
             override fun onProviderEnabled(provider: String) {}
             override fun onProviderDisabled(provider: String) {}
         }
@@ -49,11 +56,7 @@ class CompassPlugin: FlutterPlugin, StreamHandler {
         channel = EventChannel(flutterPluginBinding.binaryMessenger, "studio.midoridesign/compass")
         channel?.setStreamHandler(this)
         locationManager = context?.getSystemService(Context.LOCATION_SERVICE) as LocationManager?
-        try {
-            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locationListener)
-        } catch (e: SecurityException) {
-            // TODO: handle exception
-        }
+        startLocationUpdates()
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -140,6 +143,36 @@ class CompassPlugin: FlutterPlugin, StreamHandler {
             private fun lowPassFilter(input: Float, output: Float): Float {
                 return output + filterCoefficient * (input - output)
             }
+        }
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activity = binding.activity
+        binding.addRequestPermissionsResultListener { _, permissions, grantResults ->
+            if (permissions.contains(Manifest.permission.ACCESS_FINE_LOCATION) &&
+                grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startLocationUpdates()
+            }
+            false
+        }
+    }
+
+    override fun onDetachedFromActivity() {
+        activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        onAttachedToActivity(binding)
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        onDetachedFromActivity()
+    }
+
+    private fun startLocationUpdates() {
+        if (ContextCompat.checkSelfPermission(context!!, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, locationListener)
         }
     }
 }
