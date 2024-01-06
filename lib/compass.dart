@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 
+// Needs Refactoring
 class Compass {
   static const EventChannel _channel =
       EventChannel("studio.midoridesign/compass");
