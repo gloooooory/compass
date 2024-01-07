@@ -31,7 +31,6 @@ class CompassPlugin: FlutterPlugin, StreamHandler, ActivityAware {
     private var locationManager: LocationManager? = null
     private var currentLocation: Location? = null
     private val locationListener: LocationListener
-    private var lastAccuracySensorStatus: Int? = null
     private val headingChangeThreshold = 0.1f
     private var lastTrueHeading = 0f
     private var lastAzimuth = 0f
@@ -111,12 +110,11 @@ class CompassPlugin: FlutterPlugin, StreamHandler, ActivityAware {
 
 
             override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-                if (lastAccuracySensorStatus != accuracy) {
-                    lastAccuracySensorStatus = accuracy
-                    val shouldCalibrate = accuracy == SensorManager.SENSOR_STATUS_ACCURACY_LOW || 
-                                          accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE
-                    events.success(shouldCalibrate)
+                if (sensor != rotationVectorSensor && sensor != headingSensor) {
+                    return
                 }
+                val shouldCalibrate = accuracy != SensorManager.SENSOR_STATUS_ACCURACY_HIGH
+                events.success(shouldCalibrate)
             }
 
             private fun calculateTrueHeading(azimuth: Float): Float {
