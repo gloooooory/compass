@@ -33,7 +33,6 @@ class CompassPlugin: FlutterPlugin, StreamHandler, ActivityAware {
     private val locationListener: LocationListener
     private val headingChangeThreshold = 0.1f
     private var lastTrueHeading = 0f
-    private var lastAzimuth = 0f
     private var filterCoefficient = 0.2f
     private var activity: Activity? = null
 
@@ -90,13 +89,12 @@ class CompassPlugin: FlutterPlugin, StreamHandler, ActivityAware {
                     SensorManager.getOrientation(rotationMatrix, orientationAngles)
 
                     val azimuth = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
-                    val filteredAzimuth = lowPassFilter(azimuth, lastAzimuth)
-                    val trueHeading = calculateTrueHeading(filteredAzimuth)
+                    val trueHeading = calculateTrueHeading(azimuth)
+                    val filteredTrueHeading = lowPassFilter(trueHeading, lastTrueHeading)
 
-                    if (Math.abs(lastTrueHeading - trueHeading) > headingChangeThreshold) {
-                        lastTrueHeading = trueHeading
-                        lastAzimuth = filteredAzimuth
-                        notifyCompassChangeListeners(trueHeading)
+                    if (Math.abs(lastTrueHeading - filteredTrueHeading) > headingChangeThreshold) {
+                        lastTrueHeading = filteredTrueHeading
+                        notifyCompassChangeListeners(filteredTrueHeading)
                     }
                 }
                 else if (event.sensor.type == Sensor.TYPE_HEADING) {
@@ -129,9 +127,7 @@ class CompassPlugin: FlutterPlugin, StreamHandler, ActivityAware {
                 } ?: 0f
 
                 var trueHeading = azimuth + declination
-                if (trueHeading < 0) trueHeading += 360
-                if (trueHeading >= 360) trueHeading -= 360
-                return trueHeading
+                return (trueHeading + 360) % 360
             }
 
             private fun notifyCompassChangeListeners(heading: Float) {

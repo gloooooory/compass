@@ -3,7 +3,7 @@ description: "Demonstrates how to use the compass plugin."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 environment:
-  sdk: '>=3.3.0-174.3.beta <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -11,7 +11,7 @@ dependencies:
 
   compass:
     path: ../
-  permission_handler: ^11.1.0
+  #permission_handler: ^11.1.0
 
 dev_dependencies:
   flutter_lints: ^3.0.0

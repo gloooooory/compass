@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:compass/compass.dart';
-import 'package:permission_handler/permission_handler.dart';
+//import 'package:permission_handler/permission_handler.dart';
+import 'dart:math' as math;
 
 void main() => runApp(const App());
 
@@ -15,18 +18,25 @@ class App extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ElevatedButton(
+           /*    ElevatedButton(
                 onPressed: () async => Permission.location.request(),
                 child: const Text(
                   'Request Permission for true heading in Android',
                 ),
-              ),
+              ), */
               StreamBuilder<double>(
                 stream: Compass.heading,
                 initialData: 0,
                 builder: (_, AsyncSnapshot<double> snapshot) {
                   if (!snapshot.hasData) return const Text('Loading...');
-                  return Text('heading:${snapshot.data.toString()}');
+                  log('heading:${snapshot.data.toString()}');
+                  return Transform.rotate(
+                    angle: snapshot.data! * math.pi / 180,
+                    child: Icon(
+                      Icons.arrow_upward_rounded,
+                      size: MediaQuery.of(context).size.width - 80,
+                    ),
+                  );
                 },
               ),
               StreamBuilder<bool>(
